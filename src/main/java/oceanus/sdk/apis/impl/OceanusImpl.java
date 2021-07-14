@@ -6,10 +6,12 @@ import oceanus.apis.RPCManager;
 import oceanus.sdk.core.discovery.node.Service;
 import oceanus.sdk.logger.LoggerEx;
 import oceanus.sdk.rpc.impl.RMIServerHandler;
+import oceanus.sdk.rpc.remote.skeleton.LookupServiceBeanAnnotationHandler;
 import oceanus.sdk.rpc.remote.skeleton.ServiceSkeletonAnnotationHandler;
 import oceanus.sdk.server.OnlineServer;
 import oceanus.sdk.utils.OceanusProperties;
 import oceanus.sdk.utils.annotation.ClassAnnotationHandler;
+import org.apache.commons.lang3.NotImplementedException;
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
 import org.reflections.util.ConfigurationBuilder;
@@ -35,6 +37,7 @@ public class OceanusImpl implements Oceanus {
         this.onlineServer = new OnlineServer();
         ClassAnnotationHandler[] handlers = new ClassAnnotationHandler[]{
                 new ServiceSkeletonAnnotationHandler(),
+                new LookupServiceBeanAnnotationHandler(),
         };
         for(ClassAnnotationHandler handler : handlers) {
             classAnnotationHandlerMap.putIfAbsent(handler.getKey(), handler);
@@ -52,21 +55,6 @@ public class OceanusImpl implements Oceanus {
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
             if(isStarted.compareAndSet(false, true)) {
-                reflections = new Reflections(new ConfigurationBuilder()
-                        .addScanners(new TypeAnnotationsScanner())
-                        .forPackages(OceanusProperties.getInstance().getScanPackage())
-                        .addClassLoader(classLoader));
-
-                for(ClassAnnotationHandler classAnnotationHandler : classAnnotationHandlerMap.values()) {
-                    classAnnotationHandler.setReflections(reflections);
-                    try {
-                        classAnnotationHandler.handle();
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                        LoggerEx.error(TAG, "ClassAnnotationHandler " + classAnnotationHandler + " handle failed, " + e.getMessage());
-                    }
-                }
-
                 System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", String.valueOf(30000));
                 System.setProperty("sun.rmi.transport.tcp.responseTimeout", String.valueOf(TimeUnit.MINUTES.toMillis(1)));
 
@@ -88,6 +76,21 @@ public class OceanusImpl implements Oceanus {
                         future.completeExceptionally(throwable);
                         LoggerEx.error(TAG, "Register service " + service);
                     } else {
+                        reflections = new Reflections(new ConfigurationBuilder()
+                                .addScanners(new TypeAnnotationsScanner())
+                                .forPackages(OceanusProperties.getInstance().getScanPackage())
+                                .addClassLoader(classLoader));
+
+                        for(ClassAnnotationHandler classAnnotationHandler : classAnnotationHandlerMap.values()) {
+                            classAnnotationHandler.setReflections(reflections);
+                            try {
+                                classAnnotationHandler.handle();
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                                LoggerEx.error(TAG, "ClassAnnotationHandler " + classAnnotationHandler + " handle failed, " + e.getMessage());
+                            }
+                        }
+
                         future.complete(null);
                     }
                 });
@@ -101,7 +104,7 @@ public class OceanusImpl implements Oceanus {
 
     @Override
     public void injectBean(Object bean) {
-
+        throw new NotImplementedException();
     }
 
     @Override

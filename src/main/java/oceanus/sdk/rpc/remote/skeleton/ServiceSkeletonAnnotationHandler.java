@@ -44,7 +44,7 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
         Set<Class<?>> remoteServiceClasses = reflections.getTypesAnnotatedWith(RemoteService.class, true);
         if(remoteServiceClasses != null && !remoteServiceClasses.isEmpty()) {
             StringBuilder uriLogs = new StringBuilder(
-                    "\r\n---------------------------------------\r\n");
+                    "\r\n-------------ServiceSkeletonAnnotationHandler------------\r\n");
 
             ConcurrentHashMap<Long, SkelectonMethodMapping> newMethodMap = new ConcurrentHashMap<>();
             for(Class<?> remoteServiceClass : remoteServiceClasses) {

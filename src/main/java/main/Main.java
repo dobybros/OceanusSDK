@@ -24,8 +24,10 @@ public class Main {
             }
             System.out.println("hello " + hello);
 
-            CentralService centralService = rpcManager.getService("hello", CentralService.class);
+            CentralService centralService = rpcManager.getService("goldcentral", CentralService.class);
             System.out.println("hello2 " + centralService.hello());
+
+            System.out.println("Hello 3 " + MyController.instance.getCentralService().hello());
         }).exceptionally(throwable -> {
             System.out.println("hello failed " + throwable.getMessage());
             return null;
