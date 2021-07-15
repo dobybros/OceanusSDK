@@ -50,7 +50,7 @@ public abstract class NodeRegistrationHandler {
      * @param nodePublicKey the public key for encrypting messages from this node during transfer.
      * @return
      */
-    public abstract CompletableFuture<NodeRegistrationHandler> startNode(String discoveryHosts, int rpcPort);
+    public abstract CompletableFuture<NodeRegistrationHandler> startNode(String discoveryHosts, String rpcIp, int rpcPort);
     public abstract void init(int publicUdpPort);
     /**
      * Stop from Starfish network

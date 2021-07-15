@@ -1,9 +1,6 @@
 package main;
 
-import oceanus.apis.CoreException;
-import oceanus.apis.Oceanus;
-import oceanus.apis.OceanusBuilder;
-import oceanus.apis.RPCManager;
+import oceanus.apis.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.function.Consumer;
@@ -12,6 +9,12 @@ import java.util.function.Function;
 public class Main {
     public static void main(String... args) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, CoreException {
         OceanusBuilder oceanusBuilder = new OceanusBuilder();
+//        oceanusBuilder.withNewObjectInterception(new NewObjectInterception() {
+//            @Override
+//            public Object newObject(Class<?> clazz) {
+//                return null;
+//            }
+//        });
         Oceanus oceanus = oceanusBuilder.build();
 
         oceanus.init(Main.class.getClassLoader()).thenAccept(unused -> {

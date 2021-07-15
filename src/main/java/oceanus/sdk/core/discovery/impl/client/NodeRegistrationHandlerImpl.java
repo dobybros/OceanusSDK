@@ -57,6 +57,7 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
      */
     private ServiceNodesManager serviceNodesManager;
     private int rpcPort;
+    private String rpcIp;
     private ConcurrentHashMap<String, Service> serviceMap = new ConcurrentHashMap<>();
 
     @Override
@@ -124,6 +125,7 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
         errorPacket = null;
         node = new Node();
         node.setRpcPort(rpcPort);
+        node.setRpcIp(rpcIp);
         node.setPort(publicUdpPort);
         if(networkCommunicator == null) {
             if(publicUdpPort == -1) {
@@ -294,7 +296,7 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
     }
 
     @Override
-    public synchronized CompletableFuture<NodeRegistrationHandler> startNode(String discoveryHosts, int rpcPort) {
+    public synchronized CompletableFuture<NodeRegistrationHandler> startNode(String discoveryHosts, String rpcIp, int rpcPort) {
         if(connectivityState == null)
             throw new IllegalStateException("NodeRegistrationHandler need init first before start node.");
         if(connectivityState.getCurrentState() != CONNECTIVITY_STATE_NONE)
@@ -303,6 +305,7 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
             throw new IllegalStateException("NodeRegistrationHandler is starting, state " + connectivityState.getCurrentState());
 
         this.rpcPort = rpcPort;
+        this.rpcIp = rpcIp;
         startNodeFuture = new CompletableFuture<>();
 
         //TODO later need implement retry multiple aquaman domain, like aquaman.starfish.com, aquaman1.starfish.com, aquaman2.starfish.com, aquaman3.starfish.com, ...
