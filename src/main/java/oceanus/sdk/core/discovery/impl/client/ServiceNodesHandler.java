@@ -44,7 +44,7 @@ public class ServiceNodesHandler {
         this.serviceKey = serviceKey;
         this.serviceNodesManager = serviceNodesManager;
         sendingQueue = new SingleThreadQueueEx<>(this.serviceNodesManager.getSendingThreadPool());
-        sendingQueue.setHandler(new SingleThreadQueueEx.Handler<>() {
+        sendingQueue.setHandler(new SingleThreadQueueEx.Handler<ContentPacketContainer<? extends ResponseTransport, ? extends RequestTransport<?>>>() {
             @Override
             public void execute(ContentPacketContainer<? extends ResponseTransport, ? extends RequestTransport<?>> contentPacketContainer) throws Throwable {
                 contentPacketContainer.done();

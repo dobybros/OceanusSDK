@@ -118,7 +118,7 @@ public class DiscoveryHostManager {
                 address = copied.get(index);
             }
             if(address != null) {
-                NetworkCommunicator.ContentPacketResponseListener<R> listener = new NetworkCommunicator.ContentPacketResponseListener<>() {
+                NetworkCommunicator.ContentPacketResponseListener<R> listener = new NetworkCommunicator.ContentPacketResponseListener<R>() {
                     @Override
                     public void responseReceived(ContentPacket<R> response, ContentPacket<? extends FailedResponse> failedResponse, Long serverIdCRC, InetSocketAddress address) {
                         if (response != null) {

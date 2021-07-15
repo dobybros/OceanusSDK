@@ -29,7 +29,7 @@ public class FastJsonSerializationStreamHandler implements SerializationStreamHa
     private byte[] getBytes(byte[] data) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(outputStream);
-        try (outputStream; dos){
+        try{
             dos.writeInt(data.length);
             dos.write(data);
             dos.flush();
@@ -37,6 +37,13 @@ public class FastJsonSerializationStreamHandler implements SerializationStreamHa
         } catch (IOException e) {
             e.printStackTrace();
             LoggerEx.error(TAG, "getBytes " + data.length + " failed, " + e.getMessage());
+        } finally {
+            try {
+                outputStream.close();
+            } catch (Throwable ignored) { }
+            try {
+                dos.close();
+            } catch (Throwable ignored) { }
         }
         return null;
     }
@@ -58,7 +65,7 @@ public class FastJsonSerializationStreamHandler implements SerializationStreamHa
         if(theData == null)
             return null;
 
-        try (inputStream){
+        try {
             T t = JSON.parseObject(new String(theData, "utf8"), clazz);
             return t;
         } catch (UnsupportedEncodingException e) {
@@ -70,6 +77,10 @@ public class FastJsonSerializationStreamHandler implements SerializationStreamHa
             t.printStackTrace();
             LoggerEx.error(TAG, "Parse data for class " + clazz + " failed, " + t.getMessage() + " return null for this data, size " + theData.length + (theData.length < 1024 ? new String(theData) : new String(Arrays.copyOf(theData, 1024))));
             return null;
+        } finally {
+            try {
+                inputStream.close();
+            } catch (Throwable ignored) { }
         }
     }
 

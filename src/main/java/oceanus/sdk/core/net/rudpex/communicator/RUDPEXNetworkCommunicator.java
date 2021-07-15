@@ -134,7 +134,7 @@ public class RUDPEXNetworkCommunicator extends NetworkCommunicator {
             default:
                 Packet packet = null;
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-                try (inputStream) {
+                try {
                     packet = resurrectPacket(inputStream);
                     if(type == PacketSendingTransmission.TYPE_UNRELIABLE_PACKET) {
                         packet.setNeedReliable(false);
@@ -144,6 +144,9 @@ public class RUDPEXNetworkCommunicator extends NetworkCommunicator {
                     e.printStackTrace();
                     if(RUDPEXNetworkCommunicator.LOG_ENABLED) LoggerEx.error(TAG, "rawDataReceived received failed, " + e.getMessage() + " for data length " + bytes.length + " address " + inetAddress + " port " + port + " serverIdCRC " + serverIdCRC);
                 } finally {
+                    try {
+                        inputStream.close();
+                    } catch (Throwable ignored) { }
                     if(RUDPEXNetworkCommunicator.LOG_ENABLED) LoggerEx.info(TAG, "rawDataReceived received Packet " + packet + " type " + type + " serverIdCRC " + serverIdCRC + " address " + inetAddress + " port " + port);
                 }
                 break;
