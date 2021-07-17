@@ -1,8 +1,12 @@
 package main;
 
+import com.google.common.collect.Lists;
 import oceanus.apis.*;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -31,6 +35,29 @@ public class Main {
             System.out.println("hello2 " + centralService.hello());
 
             System.out.println("Hello 3 " + MyController.instance.getCentralService().hello());
+
+            PlayerItem pi = new PlayerItem();
+            pi.setItemId("rr");
+            pi.setCount(324L);
+            pi.setUpdateTime(System.currentTimeMillis());
+            List<PlayerItem> list = new ArrayList<>();
+            list.add(pi);
+            System.out.println("Hello 343 " + MyController.instance.getCentralService().getPlayerItems(pi, list));
+
+            for(int i = 0; i < 1000; i++) {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    System.out.println("aahahahahah = " + centralService.hello());
+
+                    System.out.println("Hello 324234 " + MyController.instance.getCentralService().getPlayerItems(pi, list));
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
         }).exceptionally(throwable -> {
             System.out.println("hello failed " + throwable.getMessage());
             return null;

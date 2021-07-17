@@ -387,9 +387,9 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
         findServiceRequest.setOnlyNodeServerCRC(onlyNodeServerCRC);
 //        findServiceRequest.setVersion(version);
         discoveryHostManager.sendRequestTransport(networkCommunicator, ContentPacket.buildWithContent(findServiceRequest), FindServiceResponse.class, (response, failedResponse, serverIdCRC, address) -> {
-            FindServiceResponse findServiceResponse = response.getContent();
             boolean completed = false;
-            if(findServiceResponse != null) {
+            if(response != null) {
+                FindServiceResponse findServiceResponse = response.getContent();
                 ServiceNodeResult result = findServiceResponse.getServiceNodeResult();
                 future.complete(result);
                 completed = true;

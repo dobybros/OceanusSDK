@@ -2,6 +2,7 @@ package oceanus.sdk.core.net;
 
 import oceanus.sdk.core.common.AbstractFactory;
 import oceanus.sdk.core.common.InternalTools;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class NetworkCommunicatorFactory extends AbstractFactory<NetworkCommunica
 
     public NetworkCommunicatorFactory(String serverPrefix, Class<? extends NetworkCommunicator> networkCommunicatorClass) {
         this.serverPrefix = serverPrefix;
-        if(this.serverPrefix == null || this.serverPrefix.isBlank())
+        if(StringUtils.isBlank(this.serverPrefix))
             this.serverPrefix = "node";
         this.networkCommunicatorClass = networkCommunicatorClass;
         serverName = this.serverPrefix + "-" + UUID.randomUUID().toString().replace("-", "");//RandomStringUtils.randomAlphanumeric(10);

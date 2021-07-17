@@ -17,7 +17,6 @@ import java.rmi.registry.Registry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RMIServerHandler {
-    public static final String RMIID_SSL_SUFFIX = "_SSL";
     public static final int RMI_PORT = 2222;
 
     private String rmiId;
@@ -45,7 +44,7 @@ public class RMIServerHandler {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(RMIClientHandler.class.getSimpleName() + ": ");
+        StringBuilder builder = new StringBuilder(RMIServerHandler.class.getSimpleName() + ": ");
         builder.append("rmiId: " + rmiId + " ");
         builder.append("rmiPort: " + rmiPort + " ");
         builder.append("server: " + server + " ");

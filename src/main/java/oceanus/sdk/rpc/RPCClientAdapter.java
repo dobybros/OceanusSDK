@@ -36,7 +36,7 @@ public abstract class RPCClientAdapter {
 
 	public abstract void touch();
 
-	public abstract void clientStart();
+	public abstract void clientStart() throws CoreException;
 
 	public abstract void clientDestroy();
 

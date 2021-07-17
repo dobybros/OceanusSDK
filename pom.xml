@@ -3,10 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>oceanus</groupId>
-<!--    <name>OceanusSDK</name>-->
-<!--    <artifactId>OceanusSDK</artifactId>-->
-    <name>OceanusSDK-jdk8</name>
-    <artifactId>OceanusSDK-jdk8</artifactId>
+    <name>OceanusSDK</name>
+    <artifactId>OceanusSDK</artifactId>
+<!--    <name>OceanusSDK-jdk8</name>-->
+<!--    <artifactId>OceanusSDK-jdk8</artifactId>-->
     <version>1.0.1</version>
 
     <dependencies>
@@ -94,10 +94,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0</version>
                 <configuration>
-<!--                    <source>11</source>-->
-<!--                    <target>11</target>-->
-                    <source>8</source>
-                    <target>8</target>
+                    <source>11</source>
+                    <target>11</target>
+<!--                    <source>8</source>-->
+<!--                    <target>8</target>-->
                 </configuration>
             </plugin>
 

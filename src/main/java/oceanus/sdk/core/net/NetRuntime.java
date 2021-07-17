@@ -7,6 +7,8 @@ import oceanus.sdk.core.net.serializations.SerializationStreamHandler;
 import oceanus.sdk.core.net.serializations.handlers.FastJsonSerializationStreamHandler;
 import oceanus.sdk.logger.LoggerEx;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 public final class NetRuntime extends CoreRuntime {
     private static final String TAG = NetRuntime.class.getSimpleName();
     private static SerializationStreamFactory serializationStreamFactory = new SerializationStreamFactory();
@@ -79,5 +81,8 @@ public final class NetRuntime extends CoreRuntime {
 
     public static Long getServerNameCRC() {
         return getNetworkCommunicatorFactory().getServerNameCRC();
+    }
+    public static ScheduledExecutorService getScheduledExecutorService() {
+        return getInternalTools().getScheduledExecutorService();
     }
 }

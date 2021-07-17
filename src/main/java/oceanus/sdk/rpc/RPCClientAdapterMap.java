@@ -1,9 +1,9 @@
 package oceanus.sdk.rpc;
 
 
+import oceanus.apis.CoreException;
 import oceanus.sdk.logger.LoggerEx;
-import oceanus.sdk.rpc.impl.ExpireListener;
-import oceanus.sdk.rpc.impl.RMIClientHandler;
+import oceanus.sdk.rpc.impl.RMIClientHandlerEx;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -58,38 +58,46 @@ public class RPCClientAdapterMap {
         if (clientAdapter == null) {
             if (ip == null)
                 return null;
-            RMIClientHandler rmiClient = new RMIClientHandler();
+            RMIClientHandlerEx rmiClient = new RMIClientHandlerEx();
             rmiClient.setRmiPort(rmiPort);
             rmiClient.setServerHost(ip);
             rmiClient.setRmiId(serverName);
-            rmiClient.setEnableSsl(enableSsl);
-            if (enableSsl) {
-                rmiClient.setRpcSslClientTrustJksPath(rpcSslClientTrustJksPath);
-                rmiClient.setRpcSslServerJksPath(rpcSslServerJksPath);
-                rmiClient.setRpcSslJksPwd(rpcSslJksPwd);
-            }
+//            rmiClient.setEnableSsl(enableSsl);
+//            if (enableSsl) {
+//                rmiClient.setRpcSslClientTrustJksPath(rpcSslClientTrustJksPath);
+//                rmiClient.setRpcSslServerJksPath(rpcSslServerJksPath);
+//                rmiClient.setRpcSslJksPwd(rpcSslJksPwd);
+//            }
 //			rmiClient.setServerAdapterMap(serverAdapterMap);
-            rmiClient.setExpireTime(expireTime, new ExpireListener<RPCClientAdapter>() {
-                @Override
-                public boolean expired(RPCClientAdapter handler, long touch, long expireTime) {
-                    RPCClientAdapter removedHandler = RPCClientAdapterMap.this.unregisterServer(serverName);
-                    if (removedHandler == null) {
-                        handler.clientDestroy();
-                    }
-                    return true;
+            rmiClient.setDisconnectedAfterRetryListener((handler) -> {
+                RPCClientAdapter removedHandler = RPCClientAdapterMap.this.unregisterServer(serverName);
+                if (removedHandler == null) {
+                    handler.clientDestroy();
                 }
+            });
+            rmiClient.setExpireTime(expireTime, (handler, touch, expireTime) -> {
+                RPCClientAdapter removedHandler = RPCClientAdapterMap.this.unregisterServer(serverName);
+                if (removedHandler == null) {
+                    handler.clientDestroy();
+                }
+                return true;
             });
             clientAdapter = rmiClient;
 
             clientAdapter.addStatusListener(statusListener);
-            clientAdapter.clientStart();
+            try {
+                clientAdapter.clientStart();
+            } catch (CoreException e) {
+                e.printStackTrace();
+                LoggerEx.warn(TAG, "Client adapter client start failed, " + e.getMessage() + " but will continue retry, maybe available later.");
+            }
             RPCClientAdapter existingClientAdapter = clientAdapterMap.putIfAbsent(serverName, clientAdapter);
             if (existingClientAdapter != null) {
                 LoggerEx.info(TAG, "clientAdapterMap putIfAbsent returned existing clientAdapter " + existingClientAdapter + " close the new clientAdapter " + clientAdapter);
                 clientAdapter.clientDestroy();
                 clientAdapter = existingClientAdapter;
             }
-        }else {
+        } else {
             clientAdapter.addStatusListener(statusListener);
         }
         return clientAdapter;
