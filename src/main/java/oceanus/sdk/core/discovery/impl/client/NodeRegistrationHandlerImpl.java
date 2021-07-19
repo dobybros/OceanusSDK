@@ -373,12 +373,14 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
 
     @Override
     public CompletableFuture<ServiceNodeResult> getNodesWithServices(Collection<String> services, Collection<Long> checkNodesAvailability, boolean onlyNodeServerCRC) {
+        CompletableFuture<ServiceNodeResult> future = new CompletableFuture<>();
         if(connectivityState.getCurrentState() != CONNECTIVITY_STATE_CONNECTED) {
-            return CompletableFuture.failedFuture(new IllegalStateException("Node not connect to discovery while getNodesWithPublicService services " + services));
+            future.completeExceptionally(new IllegalStateException("Node not connect to discovery while getNodesWithPublicService services " + services));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalStateException("Node not connect to discovery while getNodesWithPublicService services " + services));
         }
 //            throw new IllegalStateException("Node not connect to Aquaman");
 
-        CompletableFuture<ServiceNodeResult> future = new CompletableFuture<>();
         FindServiceRequest findServiceRequest = new FindServiceRequest();
 //        findServiceRequest.setOwner(owner);
 //        findServiceRequest.setProject(project);

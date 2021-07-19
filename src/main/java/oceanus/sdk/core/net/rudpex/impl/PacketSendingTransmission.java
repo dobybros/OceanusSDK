@@ -371,7 +371,10 @@ public class PacketSendingTransmission extends PacketTransmission {
             }
             return future;
         } else {
-            return CompletableFuture.failedFuture(new IllegalStateException("sendPacket is already sending, size " + size + " address " + address));
+            future = new CompletableFuture<>();
+            future.completeExceptionally(new IllegalStateException("sendPacket is already sending, size " + size + " address " + address));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalStateException("sendPacket is already sending, size " + size + " address " + address));
         }
     }
 

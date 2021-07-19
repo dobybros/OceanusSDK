@@ -348,8 +348,11 @@ public class PacketTransmissionManager {
 
     // 指定size发包
     public CompletableFuture<Void> sendPacket(InputStream is, int size, SocketAddress address) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
         if(address == null) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Address is null while sendPacket"));
+            future.completeExceptionally(new IllegalArgumentException("Address is null while sendPacket"));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalArgumentException("Address is null while sendPacket"));
         }
 
         try {
@@ -365,7 +368,9 @@ public class PacketTransmissionManager {
             return transmission.sendPacket(is, size, address);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            return CompletableFuture.failedFuture(throwable);
+            future.completeExceptionally(throwable);
+            return future;
+//            return CompletableFuture.failedFuture(throwable);
         }
     }
 
@@ -376,17 +381,26 @@ public class PacketTransmissionManager {
 
     // 发送不可靠的包
     public CompletableFuture<Void> sendUnreliablePacket(byte[] dataLessThanMTU, SocketAddress address) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
         if(address == null) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Address is null while sendUnReliablePacket"));
+            future.completeExceptionally(new IllegalArgumentException("Address is null while sendUnReliablePacket"));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalArgumentException("Address is null while sendUnReliablePacket"));
         }
         if(dataLessThanMTU == null) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Data is null while sendUnReliablePacket to " + address));
+            future.completeExceptionally(new IllegalArgumentException("Data is null while sendUnReliablePacket to " + address));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalArgumentException("Data is null while sendUnReliablePacket to " + address));
         }
         if(dataLessThanMTU.length >= (MTU - UNRELIABLE_PACKET_HEADER_SIZE))  {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Unreliable packet can not exceed MTU " + (MTU - UNRELIABLE_PACKET_HEADER_SIZE) + " but actual is " + dataLessThanMTU.length));
+            future.completeExceptionally(new IllegalArgumentException("Unreliable packet can not exceed MTU " + (MTU - UNRELIABLE_PACKET_HEADER_SIZE) + " but actual is " + dataLessThanMTU.length));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalArgumentException("Unreliable packet can not exceed MTU " + (MTU - UNRELIABLE_PACKET_HEADER_SIZE) + " but actual is " + dataLessThanMTU.length));
         }
         if(datagramSocket == null || datagramSocket.isClosed()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("DatagramSocket is not ready for sending, " + datagramSocket + " to address " + address));
+            future.completeExceptionally(new IllegalStateException("DatagramSocket is not ready for sending, " + datagramSocket + " to address " + address));
+            return future;
+//            return CompletableFuture.failedFuture(new IllegalStateException("DatagramSocket is not ready for sending, " + datagramSocket + " to address " + address));
         }
         try {
             //type 1 byte
@@ -404,7 +418,9 @@ public class PacketTransmissionManager {
             return CompletableFuture.completedFuture(null);
         } catch(Throwable throwable) {
             throwable.printStackTrace();
-            return CompletableFuture.failedFuture(throwable);
+            future.completeExceptionally(throwable);
+            return future;
+//            return CompletableFuture.failedFuture(throwable);
         }
     }
 

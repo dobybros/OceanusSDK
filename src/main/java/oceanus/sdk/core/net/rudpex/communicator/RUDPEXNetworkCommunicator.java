@@ -199,7 +199,10 @@ public class RUDPEXNetworkCommunicator extends NetworkCommunicator {
             super.persistentPacket(packet, os);
         } catch (Throwable e) {
             e.printStackTrace();
-            return CompletableFuture.failedFuture(e);
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+//            return CompletableFuture.failedFuture(e);
         }
         if(packet.isNeedReliable()) {
             return packetTransmissionManager.sendPacket(new ByteArrayInputStream(os.toByteArray()), address);

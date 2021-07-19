@@ -72,22 +72,31 @@ public class RMIClientHandlerEx extends RPCClientAdapter {
     public class ConnectHandler {
         private int connectCountDown = 10;
         private ScheduledFuture<?> healthCheckFuture, retryFuture;
+        private AtomicBoolean jobDone = new AtomicBoolean(false);
 
         public void connect() {
+            if(jobDone.get()) {
+                LoggerEx.error(TAG, "ConnectHandler is done already, status " + status.get());
+                return;
+            }
             try {
                 registry = LocateRegistry.getRegistry(serverHost, rmiPort);
                 server = (RMIServer) registry.lookup(rmiId);
 
                 LoggerEx.info(TAG, "RMI " + serverHost + " port " + rmiPort + " server " + rmiId + " client connected!");
-                if(!status.compareAndSet(STATUS_CONNECTING, STATUS_CONNECTED)) {
-                    LoggerEx.error(TAG, "changed from STATUS_CONNECTING to STATUS_CONNECTED failed, current is " + status.get());
-                } else {
-                    connectHandler = null;
-                    if(healthCheckFuture != null) {
-                        healthCheckFuture.cancel(true);
+                if(jobDone.compareAndSet(false, true)) {
+                    if(!status.compareAndSet(STATUS_CONNECTING, STATUS_CONNECTED)) {
+                        LoggerEx.error(TAG, "changed from STATUS_CONNECTING to STATUS_CONNECTED failed, current is " + status.get());
+                    } else {
+                        connectHandler = null;
+                        if(healthCheckFuture != null) {
+                            healthCheckFuture.cancel(true);
+                        }
+                        long healthCheckPeriodSeconds = 20L;
+                        healthCheckFuture = NetRuntime.getScheduledExecutorService().scheduleAtFixedRate(this::healthCheck, healthCheckPeriodSeconds, healthCheckPeriodSeconds, TimeUnit.SECONDS);
                     }
-                    long healthCheckPeriodSeconds = 20L;
-                    healthCheckFuture = NetRuntime.getScheduledExecutorService().scheduleAtFixedRate(this::healthCheck, healthCheckPeriodSeconds, healthCheckPeriodSeconds, TimeUnit.SECONDS);
+                } else {
+                    LoggerEx.error(TAG, "ConnectHandler is done already, status " + status.get());
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -153,7 +162,9 @@ public class RMIClientHandlerEx extends RPCClientAdapter {
         }
 
         private void retry() {
-            connect();
+            if(status.get() == STATUS_CONNECTING) {
+                connect();
+            }
         }
     }
 

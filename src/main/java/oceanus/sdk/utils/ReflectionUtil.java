@@ -495,33 +495,24 @@ public class ReflectionUtil {
     }
 
 	public static List<Annotation> getMethodDeclaredAnnotations(Class<?> clazz, Method method) {
-        ArrayList<Annotation> list = new ArrayList<>();
         Annotation[] anntations = method.getDeclaredAnnotations();
-        if(anntations != null)
-            list.addAll(List.of(anntations));
+        ArrayList<Annotation> list = new ArrayList<>(Arrays.asList(anntations));
         Class<?>[] parentInterfaces = clazz.getInterfaces();
         Class<?> superClass = clazz.getSuperclass();
-        if(parentInterfaces != null) {
-            for(Class<?> c : parentInterfaces) {
-                try {
-                    Method m = c.getMethod(method.getName(), method.getParameterTypes());
-                    if(m == null) continue;
-                    Annotation[] annotations = m.getDeclaredAnnotations();
-                    if(annotations != null)
-                        list.addAll(List.of(annotations));
-                } catch (NoSuchMethodException e) {
-                }
+        for(Class<?> c : parentInterfaces) {
+            try {
+                Method m = c.getMethod(method.getName(), method.getParameterTypes());
+                Annotation[] annotations = m.getDeclaredAnnotations();
+                list.addAll(Arrays.asList(annotations));
+            } catch (NoSuchMethodException ignored) {
             }
         }
         if(superClass != null) {
             try {
                 Method m = superClass.getMethod(method.getName(), method.getParameterTypes());
-                if(m != null) {
-                    Annotation[] annotations = m.getDeclaredAnnotations();
-                    if(annotations != null)
-                        list.addAll(List.of(annotations));
-                }
-            } catch (NoSuchMethodException e) {
+                Annotation[] annotations = m.getDeclaredAnnotations();
+                list.addAll(Arrays.asList(annotations));
+            } catch (NoSuchMethodException ignored) {
             }
         }
         return list;

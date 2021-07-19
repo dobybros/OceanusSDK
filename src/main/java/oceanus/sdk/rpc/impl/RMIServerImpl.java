@@ -27,20 +27,6 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer {
     private static final long serialVersionUID = -4853473944368414096L;
     private static final String TAG = RMIServerImpl.class.getSimpleName();
 
-    public RPCResponse onCall(RPCRequest request) throws CoreException {
-        String type = request.getType();
-        if (type == null)
-            throw new CoreException(ChatErrorCodes.ERROR_RPC_TYPE_NOMAPPING, "No server adapter found by type " + type);
-
-        if(request instanceof MethodRequest) {
-            MethodResponse response = serverMethodInvocation.onCall((MethodRequest) request);
-            return response;
-        } else {
-            throw new CoreException(CoreErrorCodes.ERROR_RPC_ILLEGAL, "Unexpected RPCRequest received, " + request + " will be ignored...");
-        }
-
-    }
-
     @Override
     public byte[] call(byte[] data, String type, Byte encode)
             throws RemoteException {
@@ -82,7 +68,7 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer {
             } else {
                 message = t.getMessage();
             }
-            throw new RemoteException(message, t);
+            throw new RemoteException(message);
         }
     }
 
