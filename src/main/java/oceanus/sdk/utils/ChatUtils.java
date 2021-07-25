@@ -149,6 +149,23 @@ public class ChatUtils {
         return buffer.toString();
     }
 
+    public static List<String> getIps() {
+        List<String> ipStrs = new ArrayList<>();
+        try {
+            for (Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
+                NetworkInterface iface = ifaces.nextElement();
+
+                for (Enumeration<InetAddress> ips = iface.getInetAddresses(); ips.hasMoreElements(); ) {
+                    InetAddress inetAddress = ips.nextElement();
+                    ipStrs.add(inetAddress.getHostAddress());
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return ipStrs;
+    }
+
     /*
      * get the local host ip
      */

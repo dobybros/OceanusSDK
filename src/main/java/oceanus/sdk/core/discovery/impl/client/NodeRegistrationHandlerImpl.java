@@ -16,8 +16,8 @@ import oceanus.sdk.core.net.adapters.data.ErrorPacket;
 import oceanus.sdk.core.net.data.RequestTransport;
 import oceanus.sdk.core.net.data.ResponseTransport;
 import oceanus.sdk.logger.LoggerEx;
+import oceanus.sdk.utils.ChatUtils;
 import oceanus.sdk.utils.state.StateMachine;
-import oshi.hardware.NetworkIF;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -59,6 +59,7 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
     private int rpcPort;
     private String rpcIp;
     private ConcurrentHashMap<String, Service> serviceMap = new ConcurrentHashMap<>();
+    private NetworkCommunicator.ContentPacketResponseListener<NodeRegistrationResponse> nodeRegistrationResponseContentPacketResponseListener;
 
     @Override
     public Map<String, Object> memory() {
@@ -139,49 +140,17 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
         node.setServerName(networkCommunicator.getServerName());
         node.setServerNameCRC(networkCommunicator.getServerNameCRC());
 
-        List<NetworkIF> networkIFS = CoreRuntime.getNetworkInterfaces();
+        List<String> networkIFS = ChatUtils.getIps();
         if(networkIFS == null || networkIFS.isEmpty()) {
             throw new IllegalStateException("No available network interfaces to start node.");
         }
-        LinkedHashSet<String> ipSet = new LinkedHashSet<>();
-        for(NetworkIF networkIF : networkIFS) {
-            LoggerEx.info(TAG, "Find network interface " + networkIF);
-            String[] ipv4s = networkIF.getIPv4addr();
-            if(ipv4s != null && ipv4s.length > 0) {
-                for(String ipv4 : ipv4s) {
-                    ipSet.add(ipv4);
-                }
-            }
-            String[] ipv6s = networkIF.getIPv6addr();
-            if(ipv6s != null && ipv6s.length > 0) {
-                for(String ipv6 : ipv6s) {
-                    ipSet.add(ipv6);
-                }
-            }
-        }
+        LinkedHashSet<String> ipSet = new LinkedHashSet<>(networkIFS);
+        
         node.setIps(new ArrayList<>(ipSet));
         NodeRegistrationRequest nodeRegistrationRequest = new NodeRegistrationRequest();
         nodeRegistrationRequest.setNode(node);
         discoveryHostManager.sendRequestTransport(networkCommunicator, ContentPacket.buildWithContent(nodeRegistrationRequest), NodeRegistrationResponse.class
-                , (response, failedResponse, serverIdCRC, address) -> {
-                    if(response != null && response.getContent() != null) {
-                        NodeRegistrationResponse nodeRegistrationResponse = response.getContent();
-                        node.setPort(nodeRegistrationResponse.getPublicPort());
-                        List<String> ips = node.getIps();
-                        if(!ips.contains(nodeRegistrationResponse.getPublicIp())) {
-                            ips.add(nodeRegistrationResponse.getPublicIp());
-                        }
-                        if(serverIdCRC != null)
-                            aquamanPingTimeMap.putIfAbsent(serverIdCRC, System.currentTimeMillis());
-                        if(nodeRegistrationResponse.isNeedHolePunching()) {
-                            connectivityState.gotoState(CONNECTIVITY_STATE_HOLE_PUNCHING, "Need hole punching to port " + nodeRegistrationResponse.getPublicPort() + " ip " + nodeRegistrationResponse.getPublicIp());
-                        } else {
-                            connectivityState.gotoState(CONNECTIVITY_STATE_CONNECTED, "Connected to port " + nodeRegistrationResponse.getPublicPort() + " ip " + nodeRegistrationResponse.getPublicIp());
-                        }
-                    } else if(failedResponse != null) {
-                        connectivityState.gotoState(CONNECTIVITY_STATE_DISCONNECTED, "Disconnected as timeout receiving NodeRegistrationResponse " + failedResponse);
-                    }
-                }, CoreRuntime.CONTENT_PACKET_TIMEOUT);
+                , nodeRegistrationResponseContentPacketResponseListener, CoreRuntime.CONTENT_PACKET_TIMEOUT);
 //        networkCommunicator.sendRequestTransport(ContentPacket.buildWithContent(nodeRegistrationRequest), addresses.get(0)
 //                , NodeRegistrationResponse.class
 //                , (response, failedResponse, serverIdCRC) -> {
