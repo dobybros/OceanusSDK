@@ -44,7 +44,7 @@ public class ReflectionUtil {
         }
 
         if (theClass != null) {
-            LoggerEx.debug("getInitiatableClass", "Convert class from " + clazz + " to " + theClass);
+//            LoggerEx.debug("getInitiatableClass", "Convert class from " + clazz + " to " + theClass);
             return theClass;
         }
         return clazz;

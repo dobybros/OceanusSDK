@@ -59,7 +59,6 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
     private int rpcPort;
     private String rpcIp;
     private ConcurrentHashMap<String, Service> serviceMap = new ConcurrentHashMap<>();
-    private NetworkCommunicator.ContentPacketResponseListener<NodeRegistrationResponse> nodeRegistrationResponseContentPacketResponseListener;
 
     @Override
     public Map<String, Object> memory() {
@@ -150,7 +149,25 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
         NodeRegistrationRequest nodeRegistrationRequest = new NodeRegistrationRequest();
         nodeRegistrationRequest.setNode(node);
         discoveryHostManager.sendRequestTransport(networkCommunicator, ContentPacket.buildWithContent(nodeRegistrationRequest), NodeRegistrationResponse.class
-                , nodeRegistrationResponseContentPacketResponseListener, CoreRuntime.CONTENT_PACKET_TIMEOUT);
+                , (response, failedResponse, serverIdCRC, address) -> {
+                    if(response != null && response.getContent() != null) {
+                        NodeRegistrationResponse nodeRegistrationResponse = response.getContent();
+                        node.setPort(nodeRegistrationResponse.getPublicPort());
+                        List<String> ips = node.getIps();
+                        if(!ips.contains(nodeRegistrationResponse.getPublicIp())) {
+                            ips.add(nodeRegistrationResponse.getPublicIp());
+                        }
+                        if(serverIdCRC != null)
+                            aquamanPingTimeMap.putIfAbsent(serverIdCRC, System.currentTimeMillis());
+                        if(nodeRegistrationResponse.isNeedHolePunching()) {
+                            connectivityState.gotoState(CONNECTIVITY_STATE_HOLE_PUNCHING, "Need hole punching to port " + nodeRegistrationResponse.getPublicPort() + " ip " + nodeRegistrationResponse.getPublicIp());
+                        } else {
+                            connectivityState.gotoState(CONNECTIVITY_STATE_CONNECTED, "Connected to port " + nodeRegistrationResponse.getPublicPort() + " ip " + nodeRegistrationResponse.getPublicIp());
+                        }
+                    } else if(failedResponse != null) {
+                        connectivityState.gotoState(CONNECTIVITY_STATE_DISCONNECTED, "Disconnected as timeout receiving NodeRegistrationResponse " + failedResponse);
+                    }
+                }, CoreRuntime.CONTENT_PACKET_TIMEOUT);
 //        networkCommunicator.sendRequestTransport(ContentPacket.buildWithContent(nodeRegistrationRequest), addresses.get(0)
 //                , NodeRegistrationResponse.class
 //                , (response, failedResponse, serverIdCRC) -> {
