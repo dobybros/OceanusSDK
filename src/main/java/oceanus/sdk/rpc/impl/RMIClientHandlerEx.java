@@ -199,12 +199,12 @@ public class RMIClientHandlerEx extends RPCClientAdapter {
     public void clientDestroy() {
         status.set(STATUS_TERMINATED);
         expireListener = null;
-        if(registry != null) {
-            try {
-                registry.unbind(rmiId);
-            } catch (Throwable ignored) { }
-            registry = null;
-        }
+//        if(registry != null) {
+//            try {
+//                registry.unbind(rmiId);
+//            } catch (Throwable ignored) { }
+//            registry = null;
+//        }
         if (server != null) {
             try {
                 boolean bool = UnicastRemoteObject.unexportObject(server, true);
