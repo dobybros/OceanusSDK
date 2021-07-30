@@ -38,10 +38,10 @@ public class OceanusProperties {
     }
 
     public int getRpcPort() {
-        return Integer.parseInt(properties.getProperty("rpc.port"));
+        return Integer.parseInt(properties.getProperty("rpc.port", "-1"));
     }
     public int getRpcDataPort() {
-        return Integer.parseInt(properties.getProperty("rpc.data.port"));
+        return Integer.parseInt(properties.getProperty("rpc.data.port", "-1"));
     }
 
     public String getScanPackage() {

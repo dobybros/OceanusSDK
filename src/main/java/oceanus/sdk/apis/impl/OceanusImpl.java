@@ -57,15 +57,20 @@ public class OceanusImpl implements Oceanus {
             if(isStarted.compareAndSet(false, true)) {
                 System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", String.valueOf(30000));
                 System.setProperty("sun.rmi.transport.tcp.responseTimeout", String.valueOf(TimeUnit.MINUTES.toMillis(1)));
-
-                RMIServerHandler rmiServerHandler = new RMIServerHandler();
-                rmiServerHandler.setRmiPort(OceanusProperties.getInstance().getRpcPort());
-                rmiServerHandler.setServerName(OnlineServer.getInstance().getServer());
-                rmiServerHandler.setIpHolder(OnlineServer.getInstance().getIpHolder());
-                rmiServerHandler.serverStart();
-
+                String serviceStr = OceanusProperties.getInstance().getService();
+                Integer rmiPort = OceanusProperties.getInstance().getRpcPort();
+                if(rmiPort != -1) {
+                    RMIServerHandler rmiServerHandler = new RMIServerHandler();
+                    rmiServerHandler.setRmiPort(rmiPort);
+                    rmiServerHandler.setServerName(OnlineServer.getInstance().getServer());
+                    rmiServerHandler.setIpHolder(OnlineServer.getInstance().getIpHolder());
+                    rmiServerHandler.serverStart();
+                    LoggerEx.info(TAG, "Oceanus is in Provider/Consumer mode. Can invoke other providers but also able to be a provider. ");
+                } else {
+                    LoggerEx.info(TAG, "Oceanus is in Consumer mode. Can only invoke other providers but not able to be a provider. ");
+                }
                 Service service = new Service();
-                service.setService(OceanusProperties.getInstance().getService());
+                service.setService(serviceStr);
                 service.setStatus(Service.STATUS_DEPLOYED);
                 service.setType(Service.TYPE_JAVA);
                 service.setVersion(OceanusProperties.getInstance().getVersion());
@@ -76,20 +81,7 @@ public class OceanusImpl implements Oceanus {
                         future.completeExceptionally(throwable);
                         LoggerEx.error(TAG, "Register service " + service);
                     } else {
-                        reflections = new Reflections(new ConfigurationBuilder()
-                                .addScanners(new TypeAnnotationsScanner())
-                                .forPackages(OceanusProperties.getInstance().getScanPackage())
-                                .addClassLoader(classLoader));
-
-                        for(ClassAnnotationHandler classAnnotationHandler : classAnnotationHandlerMap.values()) {
-                            classAnnotationHandler.setReflections(reflections);
-                            try {
-                                classAnnotationHandler.handle();
-                            } catch (Throwable e) {
-                                e.printStackTrace();
-                                LoggerEx.error(TAG, "ClassAnnotationHandler " + classAnnotationHandler + " handle failed, " + e.getMessage());
-                            }
-                        }
+                        prepareAnnotations(classLoader);
 
                         future.complete(null);
                     }
@@ -100,6 +92,23 @@ public class OceanusImpl implements Oceanus {
             future.completeExceptionally(t);
         }
         return future;
+    }
+
+    private void prepareAnnotations(ClassLoader classLoader) {
+        reflections = new Reflections(new ConfigurationBuilder()
+                .addScanners(new TypeAnnotationsScanner())
+                .forPackages(OceanusProperties.getInstance().getScanPackage())
+                .addClassLoader(classLoader));
+
+        for(ClassAnnotationHandler classAnnotationHandler : classAnnotationHandlerMap.values()) {
+            classAnnotationHandler.setReflections(reflections);
+            try {
+                classAnnotationHandler.handle();
+            } catch (Throwable e) {
+                e.printStackTrace();
+                LoggerEx.error(TAG, "ClassAnnotationHandler " + classAnnotationHandler + " handle failed, " + e.getMessage());
+            }
+        }
     }
 
     @Override
