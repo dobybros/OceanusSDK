@@ -3,10 +3,22 @@ package oceanus.sdk.apis.impl;
 import oceanus.apis.CoreException;
 import oceanus.apis.Oceanus;
 import oceanus.apis.RPCManager;
+import oceanus.sdk.core.discovery.NodeRegistrationHandler;
+import oceanus.sdk.core.discovery.node.ServiceNodeResult;
+import oceanus.sdk.logger.LoggerEx;
 import oceanus.sdk.rpc.remote.stub.ServiceStubManager;
 import oceanus.sdk.server.OnlineServer;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class RPCManagerImpl implements RPCManager {
+    private static final String TAG = RPCManagerImpl.class.getSimpleName();
+
     @Override
     public <R> R callOneServer(String service, String clazz, String method, String onlyCallOneServer, Class<R> returnClass, Object... args) throws CoreException {
         ServiceStubManager serviceStubManager = OnlineServer.getInstance().getServiceStubManagerFactory().get();
@@ -16,6 +28,33 @@ public class RPCManagerImpl implements RPCManager {
     public <R> R call(String service, String clazz, String method, Class<R> returnClass, Object... args) throws CoreException {
         ServiceStubManager serviceStubManager = OnlineServer.getInstance().getServiceStubManagerFactory().get();
         return serviceStubManager.call(service, clazz, method, null, returnClass, args);
+    }
+
+    @Override
+    public void callAllServers(Collection<String> services, String clazz, String method, Object... args) {
+        NodeRegistrationHandler nodeRegistrationHandler = OnlineServer.getInstance().getNodeRegistrationHandler();
+        if(nodeRegistrationHandler == null) {
+            LoggerEx.error(TAG, "nodeRegistrationHandler is null while callAllServers on services " + services + " class " + clazz + " method " + method + " args count " + (args != null ? args.length : 0));
+            return;
+        }
+        nodeRegistrationHandler.getNodesWithServices(services, null, true).thenAccept(serviceNodeResult -> {
+            Map<String, List<Long>> serviceNodeCRCMap = serviceNodeResult.getServiceNodeCRCIds();
+
+            if(serviceNodeCRCMap != null) {
+                for(Map.Entry<String, List<Long>> entry : serviceNodeCRCMap.entrySet()) {
+                    List<Long> serverCrcs = entry.getValue();
+                    if(serverCrcs != null) {
+                        for(Long serverCrc : serverCrcs) {
+                            try {
+                                callOneServer(entry.getKey(), clazz, method, String.valueOf(serverCrc), Object.class, args);
+                            } catch(Throwable throwable) {
+                                LoggerEx.error(TAG, "callAllServers on service " + entry.getKey() + " serverCrc " + serverCrc + " class " + clazz + " method " + method + " args count " + (args != null ? args.length : 0) + " error " + throwable.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     @Override
