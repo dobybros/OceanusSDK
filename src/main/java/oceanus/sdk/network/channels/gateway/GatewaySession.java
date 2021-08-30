@@ -1,10 +1,9 @@
-package oceanus.sdk.rpc.remote.annotations;
+package oceanus.sdk.network.channels.gateway;
 
 import java.lang.annotation.*;
 
 @Target(value = {ElementType.TYPE})
 @Retention(value = RetentionPolicy.RUNTIME)
 @Documented
-public @interface RemoteClient {
-    public String service();
+public @interface GatewaySession {
 }
