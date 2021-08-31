@@ -1,9 +1,13 @@
 package oceanus.sdk.apis.impl;
 
+import oceanus.apis.CoreException;
 import oceanus.apis.NewObjectInterception;
 import oceanus.apis.Oceanus;
 import oceanus.apis.RPCManager;
+import oceanus.sdk.core.discovery.NodeRegistrationHandler;
+import oceanus.sdk.core.discovery.node.Node;
 import oceanus.sdk.core.discovery.node.Service;
+import oceanus.sdk.core.discovery.node.ServiceNodeResult;
 import oceanus.sdk.logger.LoggerEx;
 import oceanus.sdk.rpc.impl.RMIServerHandler;
 import oceanus.sdk.rpc.remote.skeleton.LookupServiceBeanAnnotationHandler;
@@ -12,12 +16,16 @@ import oceanus.sdk.server.OnlineServer;
 import oceanus.sdk.utils.OceanusProperties;
 import oceanus.sdk.utils.annotation.ClassAnnotationHandler;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
 import org.reflections.util.ConfigurationBuilder;
 
+import javax.xml.stream.events.NotationDeclaration;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -123,5 +131,29 @@ public class OceanusImpl implements Oceanus {
 
     public void setRPCManager(RPCManager rpcManager) {
         this.rpcManager = rpcManager;
+    }
+
+   @Override
+    public List<Node> getNodesByService(String service) throws CoreException {
+        if (StringUtils.isEmpty(service)){
+            LoggerEx.error(TAG, "SERVICENAME IS NULL");
+            throw new CoreException("SERVICENAME IS NULL");
+        }
+        NodeRegistrationHandler nodeRegistrationHandler = OnlineServer.getInstance().getNodeRegistrationHandler();
+        if(null == nodeRegistrationHandler) {
+            LoggerEx.error(TAG, "nodeRegistrationHandler is null while callAllServers on services " + service);
+            throw new CoreException("nodeRegistrationHandler is null while callAllServers on services " + service);
+        }
+       CompletableFuture<ServiceNodeResult> future = nodeRegistrationHandler.getNodesWithServices(Collections.singletonList(service), null, false);
+       try {
+           ServiceNodeResult result = future.get();
+           Map<String, List<Node>> serviceNodeCRCMap = result.getServiceNodes();
+           List<Node> nodeList = serviceNodeCRCMap.get(service);
+           return null == nodeList ? new ArrayList<>() : nodeList;
+       } catch (Throwable e) {
+           LoggerEx.error(TAG,e.toString());
+           e.printStackTrace();
+       }
+       return new ArrayList<>();
     }
 }

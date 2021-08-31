@@ -1,5 +1,8 @@
 package oceanus.apis;
 
+import oceanus.sdk.core.discovery.node.Node;
+
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface Oceanus {
@@ -7,5 +10,6 @@ public interface Oceanus {
     CompletableFuture<Void> init(ClassLoader classLoader);
     void injectBean(Object bean);
     RPCManager getRPCManager();
+    List<Node> getNodesByService(String service) throws CoreException;
 
 }
