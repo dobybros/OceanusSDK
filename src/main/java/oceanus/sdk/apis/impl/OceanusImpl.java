@@ -8,6 +8,8 @@ import oceanus.sdk.core.discovery.NodeRegistrationHandler;
 import oceanus.sdk.core.discovery.node.Node;
 import oceanus.sdk.core.discovery.node.Service;
 import oceanus.sdk.core.discovery.node.ServiceNodeResult;
+import oceanus.sdk.core.common.ErrorCodes;
+import oceanus.sdk.core.net.errors.NetErrorCodes;
 import oceanus.sdk.logger.LoggerEx;
 import oceanus.sdk.rpc.impl.RMIServerHandler;
 import oceanus.sdk.rpc.remote.skeleton.LookupServiceBeanAnnotationHandler;
@@ -21,8 +23,8 @@ import org.reflections.Reflections;
 import org.reflections.scanners.*;
 import org.reflections.util.ConfigurationBuilder;
 
-import javax.xml.stream.events.NotationDeclaration;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -129,15 +131,27 @@ public class OceanusImpl implements Oceanus {
         return rpcManager;
     }
 
+    @Override
+    public CompletableFuture<List<String>> getRegisteredServices() {
+        NodeRegistrationHandler nodeRegistrationHandler = OnlineServer.getInstance().getNodeRegistrationHandler();
+        if(nodeRegistrationHandler == null) {
+            LoggerEx.error(TAG, "nodeRegistrationHandler is null while getRegisteredServices");
+            CompletableFuture<List<String>> future = new CompletableFuture<>();
+            future.completeExceptionally(new CoreException(NetErrorCodes.ERROR_NODE_UNREGISTERED, "nodeRegistrationHandler is null while getRegisteredServices"));
+            return future;
+        }
+        return nodeRegistrationHandler.getRegisteredServices();
+    }
+
     public void setRPCManager(RPCManager rpcManager) {
         this.rpcManager = rpcManager;
     }
 
    @Override
     public List<Node> getNodesByService(String service) throws CoreException {
-        if (StringUtils.isEmpty(service)){
-            LoggerEx.error(TAG, "SERVICENAME IS NULL");
-            throw new CoreException("SERVICENAME IS NULL");
+        if (StringUtils.isEmpty(service)) {
+            LoggerEx.error(TAG, "getNodesByService service is null");
+            throw new CoreException("getNodesByService service is null");
         }
         NodeRegistrationHandler nodeRegistrationHandler = OnlineServer.getInstance().getNodeRegistrationHandler();
         if(null == nodeRegistrationHandler) {
@@ -151,8 +165,8 @@ public class OceanusImpl implements Oceanus {
            List<Node> nodeList = serviceNodeCRCMap.get(service);
            return null == nodeList ? new ArrayList<>() : nodeList;
        } catch (Throwable e) {
-           LoggerEx.error(TAG,e.toString());
            e.printStackTrace();
+           LoggerEx.error(TAG, "getNodesByService when getNodesWithServices " + service + " failed, " + e.getMessage());
        }
        return new ArrayList<>();
     }

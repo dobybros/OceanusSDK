@@ -66,6 +66,7 @@ public final class DiscoveryManagerImpl extends DiscoveryManager {
         registerContentPacketClass(NodeRegistrationRequest.class, NodeRegistrationServerHandler.class);
         registerContentPacketClass(ServiceRegistrationRequest.class, ServiceRegistrationServerHandler.class);
         registerContentPacketClass(FindServiceRequest.class, FindServiceServerHandler.class);
+        registerContentPacketClass(GetAllServicesRequest.class, GetAllServicesHandler.class);
         registerContentPacketClass(GetNodeByServerCRCIdRequest.class, GetNodeByServerCRCIdHandler.class);
         registerContentPacketClass(LatencyCheckRequest.class, LatencyCheckHandler.class);
         registerContentPacketClass(NodeRegistrationRequest.class, NodeRegistrationServerHandler.class);

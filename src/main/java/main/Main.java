@@ -9,6 +9,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -25,6 +26,14 @@ public class Main {
         Oceanus oceanus = oceanusBuilder.build();
 
         oceanus.init(Main.class.getClassLoader()).thenAccept(unused -> {
+            try {
+                List<String> services = oceanus.getRegisteredServices().get();
+                LoggerEx.info("AAAA", "services " + services);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
             RPCManager rpcManager = oceanus.getRPCManager();
 //            for(int i = 0; i < 1; i++) {
 //                try {

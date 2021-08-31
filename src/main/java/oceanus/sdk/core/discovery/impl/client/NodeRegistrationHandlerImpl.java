@@ -1,6 +1,7 @@
 package oceanus.sdk.core.discovery.impl.client;
 
 
+import oceanus.apis.CoreException;
 import oceanus.sdk.core.common.CoreRuntime;
 import oceanus.sdk.core.discovery.NodeRegistrationHandler;
 import oceanus.sdk.core.discovery.data.FailedResponse;
@@ -355,6 +356,35 @@ public class NodeRegistrationHandlerImpl extends NodeRegistrationHandler {
     @Override
     public <K extends RequestTransport<R>, R extends ResponseTransport> CompletableFuture<ContentPacket<R>> sendContentPacket(ContentPacket<K> packet, Class<R> responseClass, String serviceKey) {
         return serviceNodesManager.sendContentPacket(packet, responseClass, serviceKey);
+    }
+
+    @Override
+    public CompletableFuture<List<String>> getRegisteredServices() {
+        CompletableFuture<List<String>> registeredServicesFuture = new CompletableFuture<>();
+        GetAllServicesRequest getAllServicesRequest = new GetAllServicesRequest();
+        discoveryHostManager.sendRequestTransport(networkCommunicator, ContentPacket.buildWithContent(getAllServicesRequest), GetAllServicesResponse.class, new NetworkCommunicator.ContentPacketResponseListener<GetAllServicesResponse>() {
+            @Override
+            public void responseReceived(ContentPacket<GetAllServicesResponse> response, ContentPacket<? extends FailedResponse> failedResponse, Long serverIdCRC, InetSocketAddress address) {
+                boolean completed = false;
+                if (response != null) {
+                    GetAllServicesResponse getAllServicesResponse = response.getContent();
+                    if (getAllServicesResponse != null) {
+                        completed = true;
+                        registeredServicesFuture.complete(getAllServicesResponse.getServices());
+                    }
+                } else {
+                    FailedResponse failed = failedResponse.getContent();
+                    if (failed != null) {
+                        completed = true;
+                        registeredServicesFuture.completeExceptionally(new CoreException(failed.getCode(), failed.getMessage()));
+                    }
+                }
+                if (!completed) {
+                    registeredServicesFuture.completeExceptionally(new IOException("Unknown error"));
+                }
+            }
+        }, CoreRuntime.CONTENT_PACKET_TIMEOUT);
+        return registeredServicesFuture;
     }
 
     @Override

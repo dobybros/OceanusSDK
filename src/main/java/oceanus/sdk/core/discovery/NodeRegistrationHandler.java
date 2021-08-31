@@ -59,6 +59,7 @@ public abstract class NodeRegistrationHandler {
 
     public abstract CompletableFuture<ServiceRuntime> registerService(Service service);
     public abstract CompletableFuture<ServiceNodeResult> getNodesWithServices(Collection<String> services, Collection<Long> checkNodesAvailability, boolean onlyNodeServerCRC);
+    public abstract CompletableFuture<List<String>> getRegisteredServices();
     public abstract CompletableFuture<Node> getNodeByServerCRCId(Long serverCRCId);
     /**
      * Unregister service from Starfish network.

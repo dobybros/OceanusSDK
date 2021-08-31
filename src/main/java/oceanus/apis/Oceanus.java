@@ -12,4 +12,5 @@ public interface Oceanus {
     RPCManager getRPCManager();
     List<Node> getNodesByService(String service) throws CoreException;
 
+    CompletableFuture<List<String>> getRegisteredServices();
 }
