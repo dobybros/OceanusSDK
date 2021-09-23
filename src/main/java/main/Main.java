@@ -14,7 +14,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Main {
-
     public static void main(String... args) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, CoreException {
         OceanusBuilder oceanusBuilder = new OceanusBuilder();
 //        oceanusBuilder.withNewObjectInterception(new NewObjectInterception() {
@@ -35,27 +34,27 @@ public class Main {
                 e.printStackTrace();
             }
             RPCManager rpcManager = oceanus.getRPCManager();
-//            for(int i = 0; i < 1; i++) {
-//                try {
-//                    JSONArray players = rpcManager.call("goldplayer", "PlayerService", "getAllPlayers", JSONArray.class, 0, 10, "fadsf");
-//                    System.out.println("players " + players);
-//                } catch (CoreException e) {
-//                    e.printStackTrace();
-//                }
-//                try {
-//                    Thread.sleep(3000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-
-            String hello = null;
-            try {
-                hello = rpcManager.call("goldcentral", "CentralService", "hello", String.class);
-            } catch (CoreException e) {
-                e.printStackTrace();
+            for(int i = 0; i < 5; i++) {
+                try {
+                    JSONArray players = rpcManager.call("goldplayer", "PlayerService", "getAllPlayers", JSONArray.class, 0, 10);
+                    System.out.println("players " + players);
+                } catch (CoreException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(300000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            System.out.println("hello " + hello);
+
+//            String hello = null;
+//            try {
+//                hello = rpcManager.call("goldcentral", "CentralService", "hello", String.class);
+//            } catch (CoreException e) {
+//                e.printStackTrace();
+//            }
+//            System.out.println("hello " + hello);
 //
 //            CentralService centralService = rpcManager.getService("goldcentral", CentralService.class);
 //            System.out.println("hello2 " + centralService.hello());
@@ -96,12 +95,6 @@ public class Main {
             System.out.println("hello failed " + throwable.getMessage());
             return null;
         });
-        synchronized (oceanusBuilder) {
-            try {
-                oceanusBuilder.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+
     }
 }

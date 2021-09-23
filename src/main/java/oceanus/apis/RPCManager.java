@@ -9,6 +9,8 @@ public interface RPCManager {
 
     void callAllServers(Collection<String> services, String clazz, String method, Object... args);
 
+    void callAllServersAsync(Collection<String> services, String clazz, String method, Object... args);
+
     <S> S getService(String service, Class<S> sClass);
 
     <S> S getService(String service, Class<S> sClass, String onlyCallOneServer);

@@ -119,4 +119,5 @@ public interface ChatErrorCodes {
     int ERROR_NODE_IP_NOT_FOUND = -10225;
     int ERROR_RMICALL_TIMEOUT = -10226;
     int ERROR_CREATE_CACHE = -10227;
+    int ERROR_CALL_ALL_SERVER_FAILED = -10228;
 }
