@@ -26,6 +26,7 @@ public class OnlineServer {
     private static final String TAG = OnlineServer.class.getSimpleName();
     private IPHolder ipHolder;
     private NewObjectInterception newObjectInterception;
+    private String service;
 //    private SDockersService sdockersService;
 
 //    private DockerStatusService dockerStatusService;
@@ -109,6 +110,15 @@ public class OnlineServer {
         //这个是使用RUDP做微服务调用， 但是现在基本上没有使用， 所以做最小配置
         System.setProperty("starfish.discovery.packet.send.pool.size", "1");
     }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
     public void setClassAnnotationHandlerMap(ConcurrentHashMap<Object, ClassAnnotationHandler> classAnnotationHandlerMap) {
         this.classAnnotationHandlerMap = classAnnotationHandlerMap;
     }

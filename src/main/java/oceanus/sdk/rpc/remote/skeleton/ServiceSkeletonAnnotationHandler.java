@@ -36,7 +36,7 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
 
     public ServiceSkeletonAnnotationHandler() {
 //        extraAnnotations = new ArrayList<>();
-        service = OceanusProperties.getInstance().getService();
+        service = OnlineServer.getInstance().getService();
     }
 
     @Override

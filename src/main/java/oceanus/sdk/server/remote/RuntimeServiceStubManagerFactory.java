@@ -2,6 +2,7 @@ package oceanus.sdk.server.remote;
 
 import oceanus.sdk.rpc.remote.stub.ServiceStubManager;
 import oceanus.sdk.rpc.remote.stub.ServiceStubManagerFactory;
+import oceanus.sdk.server.OnlineServer;
 import oceanus.sdk.utils.OceanusProperties;
 
 import java.util.Map;
@@ -20,7 +21,7 @@ public class RuntimeServiceStubManagerFactory implements ServiceStubManagerFacto
 
     @Override
     public ServiceStubManager get(String lanId) {
-        String fromService = OceanusProperties.getInstance().getService();
+        String fromService = OnlineServer.getInstance().getService();
 
         lanId = LAN_ID_DEFAULT;
         ServiceStubManager serviceStubManager = serviceStubManagerMap.get(lanId);

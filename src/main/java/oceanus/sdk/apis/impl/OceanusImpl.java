@@ -96,6 +96,7 @@ public class OceanusImpl implements Oceanus {
                 service.setVersion(OceanusProperties.getInstance().getVersion());
                 service.setMinVersion(0);
                 service.setUploadTime(System.currentTimeMillis());
+                OnlineServer.getInstance().setService(serviceStr);
                 OnlineServer.getInstance().registerService(service).whenComplete((serviceRuntime, throwable) -> {
                     if(throwable != null) {
                         future.completeExceptionally(throwable);
