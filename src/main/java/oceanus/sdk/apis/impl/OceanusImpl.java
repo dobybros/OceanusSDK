@@ -62,13 +62,23 @@ public class OceanusImpl implements Oceanus {
 
     @Override
     public CompletableFuture<Void> init(ClassLoader classLoader) {
+        return init(null, classLoader);
+    }
+
+    @Override
+    public CompletableFuture<Void> init(String customService, ClassLoader classLoader) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
             if(isStarted.compareAndSet(false, true)) {
                 System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", String.valueOf(30000));
                 System.setProperty("sun.rmi.transport.tcp.responseTimeout", String.valueOf(TimeUnit.MINUTES.toMillis(1)));
-                String serviceStr = OceanusProperties.getInstance().getService();
-                Integer rmiPort = OceanusProperties.getInstance().getRpcPort();
+                String serviceStr = null;
+                if(customService == null) {
+                    serviceStr = OceanusProperties.getInstance().getService();
+                } else {
+                    serviceStr = customService;
+                }
+                int rmiPort = OceanusProperties.getInstance().getRpcPort();
                 if(rmiPort != -1) {
                     RMIServerHandler rmiServerHandler = new RMIServerHandler();
                     rmiServerHandler.setRmiPort(rmiPort);

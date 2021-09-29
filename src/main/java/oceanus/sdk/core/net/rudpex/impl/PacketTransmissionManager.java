@@ -138,7 +138,7 @@ public class PacketTransmissionManager {
                 try {
                     datagramSocket.receive(packet);
                 } catch (Throwable t) {
-                    t.printStackTrace();
+//                    t.printStackTrace();
                     if(RUDPEXNetworkCommunicator.LOG_ENABLED) LoggerEx.error(TAG, "DatagramSocket receive packet failed, " + t.getMessage());
                     continue;
                 }

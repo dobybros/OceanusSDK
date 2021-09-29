@@ -76,7 +76,9 @@ public class RMIServerHandler {
             t.printStackTrace();
             LoggerEx.fatal(TAG, "RMIClientHandler server start failed. Server will be shutdown... " + t.getMessage());
             OnlineServer.shutdownNow();
-            System.exit(0);
+            LoggerEx.error(TAG, "[Oceanus] FAILED TO START RPC SERVER. WILL NOT WORK AS EXPECTED");
+            LoggerEx.error(TAG, "[Oceanus] FAILED TO START RPC SERVER. WILL NOT WORK AS EXPECTED");
+            LoggerEx.error(TAG, "[Oceanus] FAILED TO START RPC SERVER. WILL NOT WORK AS EXPECTED");
         }
     }
 

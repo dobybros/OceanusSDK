@@ -85,8 +85,10 @@ public class OnlineServer {
                         DiscoveryRuntime.getAndInitNodeRegistrationHandler(-1).startNode(OceanusProperties.getInstance().getDiscoveryHost(), OnlineServer.getInstance().getIp(), OceanusProperties.getInstance().getRpcPort()).
                                 thenAccept(consumer).exceptionally(throwable -> {
                             throwable.printStackTrace();
-                            LoggerEx.error(TAG, "Register node to "  + OceanusProperties.getInstance().getDiscoveryHost() + " failed, " + throwable);
-                            System.exit(0);
+                            LoggerEx.error(TAG, "Register node to "  + OceanusProperties.getInstance().getDiscoveryHost() + " failed, " + throwable.getMessage());
+                            LoggerEx.error(TAG, "[Oceanus] FAILED TO CONNECT TO DISCOVERY "  + OceanusProperties.getInstance().getDiscoveryHost() + ". SERVICE " + service + " WILL NOT WORK AS EXPECTED");
+                            LoggerEx.error(TAG, "[Oceanus] FAILED TO CONNECT TO DISCOVERY "  + OceanusProperties.getInstance().getDiscoveryHost() + ". SERVICE " + service + " WILL NOT WORK AS EXPECTED");
+                            LoggerEx.error(TAG, "[Oceanus] FAILED TO CONNECT TO DISCOVERY "  + OceanusProperties.getInstance().getDiscoveryHost() + ". SERVICE " + service + " WILL NOT WORK AS EXPECTED");
                             return null;
                         });
                     } else {
