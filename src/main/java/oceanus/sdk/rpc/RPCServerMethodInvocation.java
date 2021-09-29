@@ -14,12 +14,12 @@ public class RPCServerMethodInvocation extends RPCServerAdapter<MethodRequest, M
 
     @Override
     public MethodResponse onCall(MethodRequest request) throws CoreException {
-        ServiceSkeletonAnnotationHandler.SkelectonMethodMapping methodMapping = getMethodMapping(request);
+        ServiceSkeletonAnnotationHandler.SkeletonMethodMapping methodMapping = getMethodMapping(request);
         MethodResponse response = methodMapping.invoke(request);
         return response;
     }
 
-    public ServiceSkeletonAnnotationHandler.SkelectonMethodMapping getMethodMapping(MethodRequest request) throws CoreException{
+    public ServiceSkeletonAnnotationHandler.SkeletonMethodMapping getMethodMapping(MethodRequest request) throws CoreException{
         Long crc = request.getCrc();
 //        if(crc == 0 || crc == -1)
 //            throw new CoreException(CoreErrorCodes.ERROR_METHODREQUEST_CRC_ILLEGAL, "CRC is illegal for MethodRequest");
@@ -30,7 +30,7 @@ public class RPCServerMethodInvocation extends RPCServerAdapter<MethodRequest, M
         ServiceSkeletonAnnotationHandler serviceSkeletonAnnotationHandler = (ServiceSkeletonAnnotationHandler) OnlineServer.getInstance().getClassAnnotationHandler(ServiceSkeletonAnnotationHandler.class);
         if(serviceSkeletonAnnotationHandler == null)
             throw new CoreException(ChatErrorCodes.ERROR_METHODREQUEST_SKELETON_NULL, "Skeleton handler is not for service " + service + " on service_class_method ");
-        ServiceSkeletonAnnotationHandler.SkelectonMethodMapping methodMapping = serviceSkeletonAnnotationHandler.getMethodMapping(crc);
+        ServiceSkeletonAnnotationHandler.SkeletonMethodMapping methodMapping = serviceSkeletonAnnotationHandler.getMethodMapping(crc);
         if(methodMapping == null)
             throw new CoreException(ChatErrorCodes.ERROR_METHODREQUEST_METHODNOTFOUND, "Method doesn't be found by service_class_method ");
         return methodMapping;

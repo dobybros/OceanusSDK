@@ -12,7 +12,6 @@ import oceanus.sdk.rpc.remote.annotations.RemoteService;
 import oceanus.sdk.rpc.remote.stub.RpcCacheManager;
 import oceanus.sdk.server.OnlineServer;
 import oceanus.sdk.utils.ObjectId;
-import oceanus.sdk.utils.OceanusProperties;
 import oceanus.sdk.utils.ReflectionUtil;
 import oceanus.sdk.utils.Tracker;
 import oceanus.sdk.utils.annotation.ClassAnnotationHandler;
@@ -26,17 +25,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
     private static final String TAG = ServiceSkeletonAnnotationHandler.class.getSimpleName();
-    private ConcurrentHashMap<Long, SkelectonMethodMapping> methodMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, SkeletonMethodMapping> methodMap = new ConcurrentHashMap<>();
 
-    private Integer serviceVersion;
-    private String service;
 //    private List<Class<? extends Annotation>> extraAnnotations;
 //    private List<ServiceAnnotation> annotationList = new ArrayList<>();
 
 
     public ServiceSkeletonAnnotationHandler() {
 //        extraAnnotations = new ArrayList<>();
-        service = OnlineServer.getInstance().getService();
     }
 
     @Override
@@ -46,7 +42,7 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
             StringBuilder uriLogs = new StringBuilder(
                     "\r\n-------------ServiceSkeletonAnnotationHandler------------\r\n");
 
-            ConcurrentHashMap<Long, SkelectonMethodMapping> newMethodMap = new ConcurrentHashMap<>();
+            ConcurrentHashMap<Long, SkeletonMethodMapping> newMethodMap = new ConcurrentHashMap<>();
             for(Class<?> remoteServiceClass : remoteServiceClasses) {
                 scanClass(remoteServiceClass, OnlineServer.getInstance().getOrCreateObject(remoteServiceClass), newMethodMap, uriLogs);
             }
@@ -56,27 +52,11 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
         }
     }
 
-    public String getService() {
-        return service;
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
-
-    public Integer getServiceVersion() {
-        return serviceVersion;
-    }
-
-    public void setServiceVersion(Integer serviceVersion) {
-        this.serviceVersion = serviceVersion;
-    }
-
-    public class SkelectonMethodMapping extends MethodMapping {
+    public class SkeletonMethodMapping extends MethodMapping {
         private Object remoteService;
         private List<RpcServerInterceptor> rpcServerInterceptors;
 
-        public SkelectonMethodMapping(Method method) {
+        public SkeletonMethodMapping(Method method) {
             super(method);
         }
 
@@ -115,7 +95,7 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
             boolean error = false;
             long time = System.currentTimeMillis();
             try {
-                builder.append("$$methodrequest:: " + method.getDeclaringClass().getSimpleName() + "#" + method.getName() + " $$service:: " + service + " $$serviceversion:: " + serviceVersion + " $$parenttrackid:: " + parentTrackId + " $$currenttrackid:: " + currentTrackId + " $$args:: " + request.getArgsTmpStr());
+                builder.append("$$methodrequest:: " + method.getDeclaringClass().getSimpleName() + "#" + method.getName() + " $$service:: " + OnlineServer.getInstance().getService() + " $$parenttrackid:: " + parentTrackId + " $$currenttrackid:: " + currentTrackId + " $$args:: " + request.getArgsTmpStr());
                 returnObj = method.invoke(remoteService, args);
 //                returnObj = remoteService.invokeRootMethod(method.getName(), args);
             } catch (Throwable t) {
@@ -172,11 +152,11 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
         }
     }
 
-    public SkelectonMethodMapping getMethodMapping(Long crc) {
+    public SkeletonMethodMapping getMethodMapping(Long crc) {
         return methodMap.get(crc);
     }
 
-    public void scanClass(Class<?> clazz, Object serverAdapter, ConcurrentHashMap<Long, SkelectonMethodMapping> methodMap, StringBuilder uriLogs) {
+    public void scanClass(Class<?> clazz, Object serverAdapter, ConcurrentHashMap<Long, SkeletonMethodMapping> methodMap, StringBuilder uriLogs) {
         if (clazz == null)
             return;
         RemoteService remoteService = clazz.getAnnotation(RemoteService.class);
@@ -184,9 +164,9 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
         for (Method method : methods) {
             if (method.isSynthetic() || method.getModifiers() == Modifier.PRIVATE)
                 continue;
-            SkelectonMethodMapping mm = new SkelectonMethodMapping(method);
+            SkeletonMethodMapping mm = new SkeletonMethodMapping(method);
             mm.setRemoteService(serverAdapter);
-            long value = ReflectionUtil.getCrc(method, service);
+            long value = ReflectionUtil.getCrc(method, OnlineServer.getInstance().getService());
             if (methodMap.contains(value)) {
                 LoggerEx.warn(TAG, "Don't support override methods, please rename your method " + method + " for crc " + value + " and existing method " + methodMap.get(value).getMethod());
                 continue;
@@ -214,13 +194,21 @@ public class ServiceSkeletonAnnotationHandler extends ClassAnnotationHandler {
             mm.setReturnClass(returnType);
             mm.setAsync(false);
             methodMap.put(value, mm);
-            RpcCacheManager.getInstance().putCrcMethodMap(value, service + "_" + clazz.getSimpleName() + "_" + method.getName());
+            RpcCacheManager.getInstance().putCrcMethodMap(value, OnlineServer.getInstance().getService() + "_" + clazz.getSimpleName() + "_" + method.getName());
 
-            uriLogs.append("Mapping crc " + value + " for class " + clazz.getName() + " method " + method.getName() + " for service " + service + "\r\n");
+            uriLogs.append("Mapping crc ")
+                    .append(value)
+                    .append(" for class ")
+                    .append(clazz.getName())
+                    .append(" method ")
+                    .append(method.getName())
+                    .append(" for service ")
+                    .append(OnlineServer.getInstance().getService())
+                    .append("\r\n");
         }
     }
 
-    public ConcurrentHashMap<Long, SkelectonMethodMapping> getMethodMap() {
+    public ConcurrentHashMap<Long, SkeletonMethodMapping> getMethodMap() {
         return methodMap;
     }
 

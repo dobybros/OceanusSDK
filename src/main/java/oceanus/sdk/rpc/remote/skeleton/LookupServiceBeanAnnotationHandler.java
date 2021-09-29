@@ -3,7 +3,6 @@ package oceanus.sdk.rpc.remote.skeleton;
 import oceanus.apis.CoreException;
 import oceanus.sdk.logger.LoggerEx;
 import oceanus.sdk.rpc.remote.annotations.LookupServiceBean;
-import oceanus.sdk.rpc.remote.annotations.RemoteService;
 import oceanus.sdk.rpc.remote.annotations.ServiceBean;
 import oceanus.sdk.rpc.remote.stub.ServiceStubManager;
 import oceanus.sdk.server.OnlineServer;
@@ -24,7 +23,7 @@ public class LookupServiceBeanAnnotationHandler extends ClassAnnotationHandler {
             StringBuilder uriLogs = new StringBuilder(
                     "\r\n--------------LookupServiceBeanAnnotationHandler-------------\r\n");
 
-            ConcurrentHashMap<Long, ServiceSkeletonAnnotationHandler.SkelectonMethodMapping> newMethodMap = new ConcurrentHashMap<>();
+            ConcurrentHashMap<Long, ServiceSkeletonAnnotationHandler.SkeletonMethodMapping> newMethodMap = new ConcurrentHashMap<>();
             for(Class<?> remoteServiceClass : remoteServiceClasses) {
                 Object bean = OnlineServer.getInstance().getOrCreateObject(remoteServiceClass);
                 Field[] fields = ReflectionUtil.getFields(remoteServiceClass);
