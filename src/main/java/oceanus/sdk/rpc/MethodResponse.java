@@ -2,6 +2,7 @@ package oceanus.sdk.rpc;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import oceanus.sdk.errors.ChatErrorCodes;
 import oceanus.apis.CoreException;
 import oceanus.sdk.logger.LoggerEx;
@@ -9,14 +10,16 @@ import oceanus.sdk.rpc.remote.MethodMapping;
 import oceanus.sdk.rpc.remote.stub.RpcCacheManager;
 import oceanus.sdk.rpc.remote.stub.ServiceStubManager;
 import oceanus.sdk.server.OnlineServer;
-import oceanus.sdk.utils.DataInputStreamEx;
-import oceanus.sdk.utils.DataOutputStreamEx;
-import oceanus.sdk.utils.GZipUtils;
+import oceanus.sdk.utils.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class MethodResponse extends RPCResponse {
     private static final String TAG = MethodResponse.class.getSimpleName();
@@ -57,11 +60,20 @@ public class MethodResponse extends RPCResponse {
                         ByteArrayInputStream bais = null;
                         DataInputStreamEx dis = null;
                         try {
-                            bais = new ByteArrayInputStream(bytes);
+                            bais = new ByteArrayInputStream(GZipUtils.decompress(bytes));
                             dis = new DataInputStreamEx(bais);
-                            version = dis.readByte();
-                            crc = dis.readLong();
-                            if (crc == null || crc == 0 || crc == -1)
+                            version = dis.getDataInputStream().readByte();
+//                            switch (version) {
+//                                case 1:
+//                                    resurrectVersionOne(dis);
+//                                    break;
+//                                case 2:
+//                                    break;
+//                                default:
+//                                    throw new CoreException(ChatErrorCodes.ERROR_ILLEGAL_METHOD_RESPONSE_VERSION, "Illegal method response version " + version);
+//                            }
+                            crc = dis.getDataInputStream().readLong();
+                            if (crc == 0 || crc == -1)
                                 throw new CoreException(ChatErrorCodes.ERROR_METHODREQUEST_CRC_ILLEGAL, "CRC is illegal for MethodRequest,service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
 
                             ServiceStubManager serviceStubManager = null;
@@ -74,52 +86,80 @@ public class MethodResponse extends RPCResponse {
                             }
 
                             MethodMapping methodMapping = serviceStubManager.getMethodMapping(crc);
-//						if(methodMapping == null)
-//							throw new CoreException(ChatErrorCodes.ERROR_METHODREQUEST_METHODNOTFOUND, "Method doesn't be found by crc " + crc);
 
-                            int returnLength = dis.readInt();
-                            if (returnLength > 0) {
-                                byte[] returnBytes = new byte[returnLength];
-                                dis.readFully(returnBytes);
-                                try {
-                                    byte[] data = GZipUtils.decompress(returnBytes);
-                                    String json = new String(data, "utf8");
-                                    returnTmpStr = json;
-                                    Class<?> returnClass = ((MethodRequest)request).getSpecifiedReturnClass();
-                                    if(returnClass != null && !returnClass.equals(Object.class)) {
-                                        returnObject = JSON.parseObject(json, returnClass);
-                                    } else {
-                                        if (methodMapping == null || methodMapping.getReturnClass().equals(Object.class)) {
-                                            returnObject = JSON.parse(json);
-                                        } else {
-                                            returnObject = JSON.parseObject(json, methodMapping.getGenericReturnClass());
+                            Class<?> returnClass = ((MethodRequest)request).getSpecifiedReturnClass();
+                            if(returnClass == null || returnClass.equals(Object.class)) {
+                                if (methodMapping == null || methodMapping.getReturnClass().equals(Object.class)) {
+                                    returnClass = JSONObject.class;
+                                } else {
+                                    Type type = methodMapping.getGenericReturnClass();
+                                    if(type instanceof Class<?>) {
+                                        returnClass = (Class<?>) type;
+                                    } else if (type instanceof ParameterizedType) {
+                                        Type rawType = ((ParameterizedType) type).getRawType();
+                                        if (rawType instanceof Class<?>) {
+                                            returnClass = (Class<?>) rawType;
                                         }
                                     }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                    LoggerEx.error(TAG, "Parse return bytes failed, " + e.getMessage() + ",service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
                                 }
                             }
 
-                            int execeptionLength = dis.readInt();
-                            if (execeptionLength > 0) {
-                                byte[] exceptionBytes = new byte[execeptionLength];
-                                dis.readFully(exceptionBytes);
-                                try {
-                                    byte[] data = GZipUtils.decompress(exceptionBytes);
-                                    String json = new String(data, "utf8");
-                                    JSONObject jsonObj = (JSONObject) JSON.parse(json);
-                                    if (jsonObj != null) {
-                                        Integer code = jsonObj.getInteger("code");
-                                        String message = jsonObj.getString("message");
-                                        String logLevel = jsonObj.getString("logLevel");
-                                        if (code != null) {
-                                            exception = new CoreException(code, message, logLevel);
+                            byte argumentType = dis.getDataInputStream().readByte();
+                            switch (argumentType) {
+                                case MethodRequest.ARGUMENT_TYPE_BYTES:
+                                    int length = dis.getDataInputStream().readInt();
+                                    byte[] bytes2 = new byte[length];
+                                    dis.getDataInputStream().readFully(bytes2);
+                                    if(returnClass != null && returnClass.equals(byte[].class)) {
+                                        returnObject = bytes2;
+                                    }
+                                    break;
+                                case MethodRequest.ARGUMENT_TYPE_JAVA_BINARY:
+                                    int length1 = dis.getDataInputStream().readInt();
+                                    byte[] bytes1 = new byte[length1];
+                                    dis.getDataInputStream().readFully(bytes1);
+                                    if (returnClass != null && BinarySerializable.class.isAssignableFrom(returnClass)) {
+                                        if(ReflectionUtil.canBeInitiated(returnClass)) {
+                                            try {
+                                                BinarySerializable binarySerializable = (BinarySerializable) returnClass.getConstructor().newInstance();
+                                                try (ByteArrayInputStream bais1 = new ByteArrayInputStream(bytes1)) {
+                                                    binarySerializable.resurrect(bais1);
+                                                    returnObject = binarySerializable;
+                                                }
+                                            } catch (Throwable e) {
+                                                e.printStackTrace();
+                                                LoggerEx.error(TAG, "Deserialize return object " + returnClass + " from method " + (methodMapping != null ? methodMapping.getMethod() : "") + " failed, " + e.getMessage());
+                                            }
                                         }
                                     }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                    LoggerEx.error(TAG, "Parse exception bytes failed, " + e.getMessage() + ",service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
+                                    break;
+                                case MethodRequest.ARGUMENT_TYPE_JSON:
+                                    String jsonString = dis.getDataInputStream().readUTF();
+                                    if(returnClass != null) {
+                                        if(returnClass.equals(JSONObject.class)) {
+                                            returnObject = JSON.parse(jsonString);
+                                        } else {
+                                            returnObject = JSON.parseObject(jsonString, returnClass);
+                                        }
+                                    }
+                                    break;
+                                case MethodRequest.ARGUMENT_TYPE_NONE:
+                                    break;
+                            }
+
+                            int execeptionLength = dis.getDataInputStream().readInt();
+                            if (execeptionLength > 0) {
+                                byte[] exceptionBytes = new byte[execeptionLength];
+                                dis.getDataInputStream().readFully(exceptionBytes);
+                                String json = new String(exceptionBytes, StandardCharsets.UTF_8);
+                                JSONObject jsonObj = (JSONObject) JSON.parse(json);
+                                if (jsonObj != null) {
+                                    Integer code = jsonObj.getInteger("code");
+                                    String message = jsonObj.getString("message");
+                                    String logLevel = jsonObj.getString("logLevel");
+                                    if (code != null) {
+                                        exception = new CoreException(code, message, logLevel);
+                                    }
                                 }
                             }
                         } catch (Throwable e) {
@@ -145,32 +185,42 @@ public class MethodResponse extends RPCResponse {
         switch (encode) {
             case ENCODE_JAVABINARY:
                 ByteArrayOutputStream baos = null;
-                DataOutputStreamEx dis = null;
+                DataOutputStreamEx dos = null;
                 try {
                     baos = new ByteArrayOutputStream();
-                    dis = new DataOutputStreamEx(baos);
-                    dis.writeByte(version);
-                    dis.writeLong(crc);
+                    dos = new DataOutputStreamEx(baos);
+                    dos.getDataOutputStream().writeByte(version);
+                    dos.getDataOutputStream().writeLong(crc);
 
                     byte[] returnBytes = null;
                     if (returnObject != null) {
-                        String returnStr = null;
-                        if (returnTmpStr == null)
-                            returnStr = JSON.toJSONString(returnObject);
-                        else
-                            returnStr = returnTmpStr;
-                        try {
-                            returnBytes = GZipUtils.compress(returnStr.getBytes("utf8"));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            LoggerEx.error(TAG, "Generate return " + returnStr + " to bytes failed, " + e.getMessage() + ",service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
+                        if(returnObject instanceof byte[]) {
+                            dos.getDataOutputStream().writeByte(MethodRequest.ARGUMENT_TYPE_BYTES);
+                            returnBytes = (byte[]) returnObject;
+                            dos.getDataOutputStream().writeInt(returnBytes.length);
+                            dos.getDataOutputStream().write(returnBytes);
+                        } else if(returnObject instanceof BinarySerializable) {
+                            dos.getDataOutputStream().writeByte(MethodRequest.ARGUMENT_TYPE_JAVA_BINARY);
+                            BinarySerializable binarySerializable = (BinarySerializable) returnObject;
+                            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                                binarySerializable.persistent(byteArrayOutputStream);
+
+                                byte[] finalBytes = byteArrayOutputStream.toByteArray();
+                                dos.getDataOutputStream().writeInt(finalBytes.length);
+                                dos.getDataOutputStream().write(finalBytes);
+                            }
+                        } else {
+                            dos.getDataOutputStream().writeByte(MethodRequest.ARGUMENT_TYPE_JSON);
+                            String returnStr = null;
+                            if(returnTmpStr != null) {
+                                returnStr = returnTmpStr;
+                            } else {
+                                returnStr = JSON.toJSONString(returnObject, SerializerFeature.DisableCircularReferenceDetect);
+                            }
+                            dos.getDataOutputStream().writeUTF(returnStr);
                         }
-                    }
-                    if (returnBytes != null) {
-                        dis.writeInt(returnBytes.length);
-                        dis.write(returnBytes);
                     } else {
-                        dis.writeInt(0);
+                        dos.getDataOutputStream().writeByte(MethodRequest.ARGUMENT_TYPE_NONE);
                     }
 
                     byte[] exceptionBytes = null;
@@ -180,30 +230,27 @@ public class MethodResponse extends RPCResponse {
                         json.put("message", exception.getMessage());
                         json.put("logLevel", exception.getLogLevel());
                         String errorStr = json.toJSONString();//JSON.toJSONString(exception);
-                        try {
-                            exceptionBytes = GZipUtils.compress(errorStr.getBytes("utf8"));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            LoggerEx.error(TAG, "Generate error " + errorStr + " to bytes failed, " + e.getMessage() + ",service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
-                        }
+                        exceptionBytes = errorStr.getBytes(StandardCharsets.UTF_8);
                     }
                     if (exceptionBytes != null) {
-                        dis.writeInt(exceptionBytes.length);
-                        dis.write(exceptionBytes);
+                        dos.getDataOutputStream().writeInt(exceptionBytes.length);
+                        dos.getDataOutputStream().write(exceptionBytes);
                     } else {
-                        dis.writeInt(0);
+                        dos.getDataOutputStream().writeInt(0);
                     }
 
                     byte[] bytes = baos.toByteArray();
-                    setData(bytes);
+                    setData(GZipUtils.compress(bytes));
                     setEncode(ENCODE_JAVABINARY);
                     setType(MethodRequest.RPCTYPE);
                 } catch (Throwable t) {
                     t.printStackTrace();
                     throw new CoreException(ChatErrorCodes.ERROR_RPC_ENCODE_FAILED, "PB parse data failed, " + t.getMessage() + ",service_class_method: " + RpcCacheManager.getInstance().getMethodByCrc(crc));
                 } finally {
-                    IOUtils.closeQuietly(baos);
-                    IOUtils.closeQuietly(dis.original());
+                    if(baos != null)
+                        IOUtils.closeQuietly(baos);
+                    if(dos != null)
+                        IOUtils.closeQuietly(dos.original());
                 }
                 break;
             default:
