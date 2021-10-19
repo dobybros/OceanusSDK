@@ -59,43 +59,39 @@ public class RPCClientAdapterMap {
             if (ip == null)
                 return null;
             RMIClientHandlerEx rmiClient = new RMIClientHandlerEx();
-            rmiClient.setRmiPort(rmiPort);
-            rmiClient.setServerHost(ip);
-            rmiClient.setRmiId(serverName);
-//            rmiClient.setEnableSsl(enableSsl);
-//            if (enableSsl) {
-//                rmiClient.setRpcSslClientTrustJksPath(rpcSslClientTrustJksPath);
-//                rmiClient.setRpcSslServerJksPath(rpcSslServerJksPath);
-//                rmiClient.setRpcSslJksPwd(rpcSslJksPwd);
-//            }
-//			rmiClient.setServerAdapterMap(serverAdapterMap);
-            rmiClient.setDisconnectedAfterRetryListener((handler) -> {
-                RPCClientAdapter removedHandler = RPCClientAdapterMap.this.unregisterServer(serverName);
-                if (removedHandler == null) {
-                    handler.clientDestroy();
-                }
-            });
-            rmiClient.setExpireTime(expireTime, (handler, touch, expireTime) -> {
-                RPCClientAdapter removedHandler = RPCClientAdapterMap.this.unregisterServer(serverName);
-                if (removedHandler == null) {
-                    handler.clientDestroy();
-                }
-                return true;
-            });
             clientAdapter = rmiClient;
-
-            clientAdapter.addStatusListener(statusListener);
-            try {
-                clientAdapter.clientStart();
-            } catch (CoreException e) {
-                e.printStackTrace();
-                LoggerEx.warn(TAG, "Client adapter client start failed, " + e.getMessage() + " but will continue retry, maybe available later.");
-            }
-            RPCClientAdapter existingClientAdapter = clientAdapterMap.putIfAbsent(serverName, clientAdapter);
-            if (existingClientAdapter != null) {
-                LoggerEx.info(TAG, "clientAdapterMap putIfAbsent returned existing clientAdapter " + existingClientAdapter + " close the new clientAdapter " + clientAdapter);
-                clientAdapter.clientDestroy();
-                clientAdapter = existingClientAdapter;
+            synchronized (this) {
+                RPCClientAdapter existingClientAdapter = clientAdapterMap.putIfAbsent(serverName, clientAdapter);
+                if (existingClientAdapter == null) {
+//                LoggerEx.info(TAG, "clientAdapterMap putIfAbsent returned existing clientAdapter " + existingClientAdapter + " close the new clientAdapter " + clientAdapter);
+//                clientAdapter.clientDestroy();
+//                clientAdapter = existingClientAdapter;
+                    rmiClient.setRmiPort(rmiPort);
+                    rmiClient.setServerHost(ip);
+                    rmiClient.setRmiId(serverName);
+                    rmiClient.setDisconnectedAfterRetryListener((handler) -> {
+                        RPCClientAdapterMap.this.unregisterServer(serverName);
+//                        if (removedHandler == null) {
+//                            handler.clientDestroy();
+//                        }
+                    });
+                    rmiClient.setExpireTime(expireTime, (handler, touch, expireTime) -> {
+                        RPCClientAdapterMap.this.unregisterServer(serverName);
+//                        if (removedHandler == null) {
+//                            handler.clientDestroy();
+//                        }
+                        return true;
+                    });
+                    rmiClient.addStatusListener(statusListener);
+                    try {
+                        clientAdapter.clientStart();
+                    } catch (CoreException e) {
+                        e.printStackTrace();
+                        LoggerEx.warn(TAG, "Client adapter client start failed, " + e.getMessage() + " but will continue retry, maybe available later.");
+                    }
+                } else {
+                    clientAdapter = existingClientAdapter;
+                }
             }
         } else {
             clientAdapter.addStatusListener(statusListener);

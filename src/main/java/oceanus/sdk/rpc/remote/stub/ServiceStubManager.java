@@ -211,6 +211,7 @@ public class ServiceStubManager {
     }
     private RemoteServerHandler getRemoteServerHandler(String service, String onlyCallOneServer){
         RemoteServerHandler remoteServerHandler = new RemoteServerHandler(service, this, onlyCallOneServer);
+        remoteServerHandler.init();
         return remoteServerHandler;
     }
     public String getHost() {

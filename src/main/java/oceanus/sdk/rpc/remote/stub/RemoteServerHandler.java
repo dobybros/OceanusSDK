@@ -37,9 +37,13 @@ public class RemoteServerHandler {
         this.serviceStubManager = serviceStubManager;
 //        this.remoteServers = new RemoteServers();
         this.onlyCallOneServer = onlyCallOneServer;
+    }
+
+    public void init() {
         thisRpcClientAdapterMap = RPCClientAdapterMapFactory.getInstance().getRpcClientAdapterMap();
         RemoteServersManager.getInstance().initService(this.toService);
     }
+
 
     public String getToService() {
         return toService;
