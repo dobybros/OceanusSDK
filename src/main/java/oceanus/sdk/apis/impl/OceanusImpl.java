@@ -40,9 +40,15 @@ public class OceanusImpl implements Oceanus {
     private Reflections reflections;
     private AtomicBoolean isStarted = new AtomicBoolean(false);
     public OceanusImpl() {
+        this(null);
+    }
+    public OceanusImpl(Properties properties) {
         OnlineServer onlineServer = OnlineServer.getInstance();
         if(onlineServer != null) {
             throw new IllegalStateException("Oceanus can NOT be initiated twice. ");
+        }
+        if(properties != null) {
+            OceanusProperties.setProperties(properties);
         }
         this.onlineServer = new OnlineServer();
         ClassAnnotationHandler[] handlers = new ClassAnnotationHandler[]{

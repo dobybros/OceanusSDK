@@ -3,6 +3,7 @@ package oceanus.apis;
 import oceanus.sdk.core.discovery.node.Node;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 public interface Oceanus {

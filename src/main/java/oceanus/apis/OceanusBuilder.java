@@ -3,11 +3,13 @@ package oceanus.apis;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
+import java.util.Properties;
 
 public class OceanusBuilder {
     private NewObjectInterception newObjectInterception;
     private ClassLoader classLoader;
     private OceanusExternalJarLoader oceanusExternalJarLoader;
+    private Properties properties;
 
     public OceanusBuilder withOceanusExternalJar(String url) {
         this.oceanusExternalJarLoader = new OceanusExternalJarLoader(url);
@@ -15,6 +17,10 @@ public class OceanusBuilder {
     }
     public OceanusBuilder withNewObjectInterception(NewObjectInterception newObjectInterception) {
         this.newObjectInterception = newObjectInterception;
+        return this;
+    }
+    public OceanusBuilder withProperties(Properties properties) {
+        this.properties = properties;
         return this;
     }
     public Oceanus build() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -30,7 +36,7 @@ public class OceanusBuilder {
         theOceanusClass = classLoader.loadClass(oceanusClass);
         theRPCManagerClass = classLoader.loadClass(rpcManagerClass);
         RPCManager rpcManager = (RPCManager) theRPCManagerClass.getConstructor().newInstance();
-        Oceanus oceanus = (Oceanus) theOceanusClass.getConstructor().newInstance();
+        Oceanus oceanus = (Oceanus) theOceanusClass.getConstructor(Properties.class).newInstance(properties);
         Method setRPCManagerMethod = theOceanusClass.getMethod("setRPCManager", RPCManager.class);
         setRPCManagerMethod.invoke(oceanus, rpcManager);
         Method setNewObjectInterceptionMethod = theOceanusClass.getMethod("setNewObjectInterception", NewObjectInterception.class);

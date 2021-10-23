@@ -1,5 +1,7 @@
 package oceanus.sdk.utils;
 
+import oceanus.sdk.logger.LoggerEx;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
@@ -7,20 +9,25 @@ import java.util.Properties;
 public class OceanusProperties {
     private static OceanusProperties instance;
     private static Properties properties;
+    public static void setProperties(Properties properties) {
+        OceanusProperties.properties = properties;
+    }
 
     public static OceanusProperties getInstance() {
         if (instance == null) {
             synchronized (OceanusProperties.class) {
                 if(instance == null) {
                     instance = new OceanusProperties();
-                    URL configResource = OceanusProperties.class.getClassLoader().getResource("oceanus.properties");
-                    if (properties == null)
+                    if(properties == null) {
+                        URL configResource = OceanusProperties.class.getClassLoader().getResource("oceanus.properties");
                         properties = new Properties();
-                    if (configResource != null) {
-                        try(InputStream is = configResource.openStream()) {
-                            properties.load(is);
-                        } catch (Throwable throwable) {
-                            throwable.printStackTrace();
+                        if (configResource != null) {
+                            try(InputStream is = configResource.openStream()) {
+                                properties.load(is);
+                            } catch (Throwable throwable) {
+                                throwable.printStackTrace();
+                                LoggerEx.error("OceanusProperties", "Load properties failed, " + throwable.getMessage());
+                            }
                         }
                     }
                 }
